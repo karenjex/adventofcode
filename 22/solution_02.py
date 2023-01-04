@@ -4,35 +4,10 @@
 #      Columns start from 1 at the left and count rightward (including empty spaces)
 #      Facing: 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^)
 
-# ** This time, the map is a cube, so the wrapping rules change - need to work out the rules for this **
-#    It should just change the take_a_step function
-
-
-#    <11
-#   v 11
-# 223344
-# 223344
-#     5566
-#     5566
-
-#     11
-#     11
-# 223344>
-# 223344 v
-#     5566
-#     5566
-
-#     11
-#     11<
-# 223344
-# 223344 
-#     5566>
-#     5566
-
-
+# This time, consider the map as a cube, so the wrapping rules change
+  
 import re
 
-# inputfile = "input_test.txt"    # expected result:  1000 * 6 + 4 * 8 + 0 = 6032
 inputfile = "input.txt"
 
 # process input to get map:
@@ -59,15 +34,56 @@ with open(inputfile) as f:
         elif process_instructions:
             instruction_line=re.split('(\d+)',line.strip())     # split instructions into numbers and directions
 
+# 1. Find shape of cube's net. We're cheating for now - looked at the input to determine the shape
 
-# print('map:')
-# for row in map:
-#     print(row)
+#      0     1     2
+#          -------------
+# 0        | 1,0 | 2,0 |
+#          -------------
+# 1        | 1,1 |
+#    -------------
+# 2  | 0,2 | 1,2 | 
+#    -------------
+# 3  | 0,3 |
+#    -------      
+
+# Wrapping:
+
+# U (3) from 1,0: R (0) to 0,3 (same)
+# U (3) from 2,0: U (3) to 0,3 (same)
+# R (0) from 2,0: L (2) to 1,2 (opp)
+# D (1) from 2,0: L (2) to 1,1 (same)
+# R (0) from 1,1: U (3) to 2,0 (same)
+# R (0) from 1,2: L (2) to 2,0 (opp)
+# D (1) from 1,2: L (2) to 0,3 (same)
+# R (0) from 0,3: U (3) to 1,2 (same)
+# D (1) from 0,3: D (1) to 2,0 (same)
+# L (2) from 0,3: D (1) to 1,0 (same)
+# L (2) from 0,2: R (0) to 1,0 (opp)
+# U (3) from 0,2: R (0) to 1,1 (same)
+# L (2) from 1,1: D (1) to 0,2 (same)
+# L (2) from 1,0: R (0) to 0,2 (opp)
+
 
 max_row_len=0
 for row in map:
     if len(row)>max_row_len:
         max_row_len=len(row)
+
+section_length=int(max_row_len/3)       # length of sides of cube
+
+# find coordinates of edges of each side of the cube
+
+sides={}
+
+for i in range(3):
+    for j in range(4):
+        start_col=i*section_length
+        end_col=start_col+(section_length-1)
+        start_row=j*section_length
+        end_row=start_row+(section_length-1)
+        side={'start_col':start_col,'end_col':end_col, 'start_row':start_row, 'end_row':end_row}
+        sides[(i,j)]=side
 
 # Find position of first tile/wall per row:
 first_cols=[]
@@ -110,35 +126,92 @@ for c in range(max_row_len):                # for each column c
 
 def take_a_step(row, col, facing):
     # move one step in the proposed direction if there is no wall
+    proposed_new_facing = facing
     if facing==0:               # right (>)
         proposed_new_row=row
         proposed_new_col=col+1
-        if col==last_cols[row]:        # we're currently at the last col for this row - wraparound to first col
-            proposed_new_col=first_cols[row]
+        if col==last_cols[row]:        # we're currently at the last col for this row - wraparound
+            if   row >= 0 and row <= section_length-1:      # side (2,0) --> L (2) into (1,2) (opp)
+                proposed_new_col=sides[(1,2)]['end_col']                                     # end_col of side (1,2)
+                proposed_new_row=(sides[(1,2)]['end_row'] - (row - sides[2,0]['start_row']))   # goes from opposite end on new side
+                proposed_new_facing=2                                                        # now facing left
+            elif row >= section_length   and row <= (2*section_length)-1:       # side (1,1) --> U (3) to 2,0 (same)
+                proposed_new_col=sides[(2,0)]['start_col'] + (row - sides[(1,1)]['start_row'] ) # x cols after first col of 2,0
+                proposed_new_row=sides[(2,0)]['end_row']                                        # last row of side (2,0)
+                proposed_new_facing=3                                                           # now facing up
+            elif row >= 2*section_length and row <= (3*section_length)-1:       # side (1,2) --> L (2) to 2,0 (opp)
+                proposed_new_col=sides[(2,0)]['end_col']                                     # end_col of side (2,0)
+                proposed_new_row=(sides[2,0]['end_row'] - (row - sides[(1,2)]['start_row']))   # goes from opposite end on new side
+                proposed_new_facing=2                                                        # now facing left
+            elif row >= 3*section_length and row <= (4*section_length)-1:       # side (0,3) --> U (3) to 1,2 (same)
+                proposed_new_col=sides[(1,2)]['start_col'] + (row - sides[(0,3)]['start_row'] ) # x cols after first col of 1,2
+                proposed_new_row=sides[(1,2)]['end_row']                                        # last row of side (1,2)
+                proposed_new_facing=3                                                           # now facing up
+
     elif facing==1:             # down (v)
         proposed_new_row=row+1
         proposed_new_col=col
         if row==last_rows[col]:        # we're currently at the last row for this col - wraparound to first row
-            proposed_new_row=first_rows[col]
+            if   col >= 0                and col <= section_length-1:           # side (0,3) --> D (1) to 2,0 (same)
+                proposed_new_col=sides[(2,0)]['start_col'] + (col - sides[(0,3)]['start_col'])     # x cols after first col of side (2,0)
+                proposed_new_row=sides[(2,0)]['start_row']                                         # first row of side (2,0)
+                proposed_new_facing=1                                                              # now facing down
+            elif col >= section_length   and col <= (2*section_length)-1:       # side (1,2) --> L (2) to 0,3 (same)
+                proposed_new_col=sides[(0,3)]['end_col']                                        # last col of (0,3)
+                proposed_new_row=sides[(0,3)]['start_row'] + (col - sides[(1,2)]['start_col'] ) # x rows after first row of 0,3
+                proposed_new_facing=2                                                           # now facing left
+            elif col >= 2*section_length and col <= (3*section_length)-1:       # side (2,0) --> L (2) to 1,1 (same)
+                proposed_new_col=sides[(1,1)]['end_col']                                        # last col of (1,1)
+                proposed_new_row=(sides[(1,1)]['start_row'] + (col - sides[(2,0)]['start_col']))      # goes from opposite end on new side
+                proposed_new_facing=2                                                           # now facing left
+
     elif facing==2:             # left (<)
         proposed_new_row=row
         proposed_new_col=col-1
         if col==first_cols[row]:        # we're currently at the first col for this row - wraparound to last col
-            proposed_new_col=last_cols[row]
+            if   row >= 0                and row <= section_length-1:           # side 1 (1,0) --> right into (0,2)
+                proposed_new_col=sides[(0,2)]['start_col']                                      # first col of (0,2)
+                proposed_new_row=(sides[(0,2)]['end_row'] - (row - sides[(1,0)]['start_row']))      # goes from opposite end on new side
+                proposed_new_facing=0                                                           # now facing right
+            elif row >= section_length   and row <= (2*section_length)-1:       # side 3 (1,1) --> down into (0,2)
+                proposed_new_col=sides[(0,2)]['start_col'] + (row - sides[(1,1)]['start_row'])  # x cols after first col of 0,2
+                proposed_new_row=sides[(0,2)]['start_row']                                      # first row of (0,2)
+                proposed_new_facing=1                                                           # now facing down
+            elif row >= 2*section_length and row <= (3*section_length)-1:       # side 4 (0,2) --> right into (1,0)
+                proposed_new_col=sides[(1,0)]['start_col']                                      # first col of (1,0)
+                proposed_new_row=(sides[(1,0)]['end_row'] - (row - sides[(0,2)]['start_row']))      # goes from opposite end on new side
+                proposed_new_facing=0                                                           # now facing right
+            elif row >= 3*section_length and row <= (4*section_length)-1:       # side 6 (0,3) --> down into (1,0)
+                proposed_new_col=sides[(1,0)]['start_col'] + (row - sides[(0,3)]['start_row'])  # x cols after first col of 1,0
+                proposed_new_row=sides[(1,0)]['start_row']                                      # first row of 1,0
+                proposed_new_facing=1                                                           # now facing down
     elif facing==3:              # up (^)
         proposed_new_row=row-1
         proposed_new_col=col
         if row==first_rows[col]:        # we're currently at the first row for this col - wraparound to last row
-            proposed_new_row=last_rows[col]
+            if   col >= 0                and col <= section_length-1:           # side 4 (0,2) --> right into (1,1)
+                proposed_new_col=sides[(1,1)]['start_col']                                      # first col of 1,1
+                proposed_new_row=sides[(1,1)]['start_row'] + (col - sides[(0,2)]['start_col'])  # x rows after first row of 1,1
+                proposed_new_facing=0                                                           # now facing right
+            elif col >= section_length   and col <= (2*section_length)-1:       # side 1 (1,0) --> right into (0,3)
+                proposed_new_col=sides[(0,3)]['start_col']                                      # first col of 0,3
+                proposed_new_row=sides[(0,3)]['start_row'] + (col - sides[(1,0)]['start_col'])  # x rows after first row of 0,3
+                proposed_new_facing=0                                                           # now facing right
+            elif col >= 2*section_length and col <= (3*section_length)-1:       # side 2 (2,0) --> up into (0,3)
+                proposed_new_col=sides[(0,3)]['start_col'] + (col - sides[(2,0)]['start_col'])  # x cols after first col of 0,3
+                proposed_new_row=sides[(0,3)]['end_row'] # last row of (0,3)
+                proposed_new_facing=3                                                           # now facing up
     if map[proposed_new_row][proposed_new_col]==2:      # we've hit a wall - don't move
         hit_a_wall=True
         new_row=row
         new_col=col
+        new_facing=facing
     else:                              # move to new position
         hit_a_wall=False
         new_row=proposed_new_row
         new_col=proposed_new_col
-    return(new_row, new_col, hit_a_wall)
+        new_facing=proposed_new_facing
+    return(new_row, new_col, new_facing, hit_a_wall)
 
 current_row=0                       # first row in map
 current_column=first_cols[0]        # first open tile in first row
@@ -157,8 +230,10 @@ for i in instruction_line:
                     step_info=take_a_step(current_row, current_column, current_facing)
                     current_row=step_info[0]
                     current_column=step_info[1]
-                    hit_a_wall=step_info[2]
+                    current_facing=step_info[2]
+                    hit_a_wall=step_info[3]
                     # print('after step',x,': row',current_row,'col',current_column,' hit a wall?',hit_a_wall)
+            print('moved',step_count,'Now at row',current_row,'col',current_column,'facing',current_facing)
         else:
             direction=i
             get_count=True
@@ -166,7 +241,7 @@ for i in instruction_line:
                 current_facing=(current_facing+1)%4
             elif direction=='L':
                 current_facing=(current_facing-1)%4
-            # print('now at row',current_row,'col',current_column,'facing',current_facing)
+            print('turned',direction,'Now facing',current_facing)
 
 final_row=current_row+1         # add 1 to row index to get row number
 final_column=current_column+1   # add 1 to col index to get col number
@@ -174,3 +249,5 @@ final_column=current_column+1   # add 1 to col index to get col number
 final_password = (1000 * final_row) + (4 * final_column) + current_facing
 
 print("final password = 1000 * ",final_row,'+ 4 *',final_column,'+',current_facing,'=',final_password)
+
+print('each side is',section_length,'long')
