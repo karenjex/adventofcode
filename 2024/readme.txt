@@ -3,7 +3,7 @@ Notes to self because I forget every year what I need to do to get set up:
 1. Log in to https://adventofcode.com/yyyy via github
 2. Get session cookie_id: right click on page, inspect, storage
 3. Store cookie_id in ~/aoc_yyyy_cookie_id
-4. Create folder per day: 01 .. 24
+4. Create folder per day: 01 .. 25
 5. Create get_input.sh file in each folder containing the following line (replace yyyy and dd as appropriate):
 curl --cookie "session=$(cat ~/aoc_yyyy_cookie_id)" https://adventofcode.com/yyyy/day/dd/input > input.txt
 6. On each day, run get_imput.sh (just once!) to create input.txt
