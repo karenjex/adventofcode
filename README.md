@@ -1,5 +1,10 @@
 # Advent of Code (Attempted) Solutions
 
+# adventofcode2024
+
+I'm using Ruby this year. 
+I've spoken at several Ruby conferences over the last couple of years, so I thought it was time I gave it a try!
+
 # adventofcode2023
 
 Solutions to Advent of Code 2023
