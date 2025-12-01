@@ -22,41 +22,9 @@
 # cards: 'QQQJA' hand_type: 3     combined_val: 3 
 
 
-# set_of_hands=[
-#     {'cards': '32T3K', 'bid': 765, 'hand_type': 1}, 
-#     {'cards': 'T55J5', 'bid': 684, 'hand_type': 3}, 
-#     {'cards': 'KK677', 'bid': 28, 'hand_type': 2}, 
-#     {'cards': 'KTJJT', 'bid': 220, 'hand_type': 2}, 
-#     {'cards': 'QQQJA', 'bid': 483, 'hand_type': 3}]
+card_groups={'K':1, 'T':2, 'J':2}
 
-# sorted_hands = sorted(set_of_hands, key=lambda x:x['hand_type'])
+print(card_groups)
 
-# current_rank=1
-# for hand in sorted_hands:
-#     hand_type=hand['hand_type']
-#     cards=hand['cards']
-#     bid=hand['bid']
-#     hand_with_same_type=next(hand for hand in sorted_hands if hand['hand_type'] == hand_type)
-#     print(hand_with_same_type)
-#     hand_rank = current_rank
-#     print('rank: ',hand_rank)
-#     current_rank+=1
-
-
-def convert_card_val(card_val):
-    if card_val=='A':
-        new_val='14'
-    elif card_val=='K':
-        new_val='13'
-    elif card_val=='Q':
-        new_val='12'
-    elif card_val=='J':
-        new_val='11'
-    elif card_val=='T':
-        new_val='10'
-    else: 
-        new_val=''.join(['0',card_val])
-    return new_val
-
-for x in '32T3K':
-    print(convert_card_val(x))
+for group in card_groups:
+    print(group)

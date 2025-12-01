@@ -1,25 +1,26 @@
-# GOAL: Initialize the registers to the given values, then run the program. 
-#       Once it halts, what do you get if you use commas to join the values it output into a single string?
+# GOAL: Using the same rules as part 1, find the lowest positive initial value for register A 
+#       that causes the program to output a copy of itself.
 
 # Example:
 
-# Register A: 729
+# Register A: 2024
 # Register B: 0
 # Register C: 0
 
-# Program: 0,1,5,4,3,0
+# Program: 0,3,5,4,3,0
 
-# After the above program halts, its final output will be 4,6,3,5,6,3,5,2,1,0.
+# Outputs a copy of itself if register A is instead initialized to 117440.
 
 class Computer
 
-  attr_reader :final_output
+  attr_reader :reg_a_val
 
   def initialize(input)
     # get initial values of registers A, B & C plus program instructions
     @reg_a, @reg_b, @reg_c, @program=self.process_input(input)
+    @program_string=self.get_program_string
     # execute program to get final output
-    @final_output=self.run_program
+    @reg_a_val=self.replicate_program
   end
 
   def process_input(input)
@@ -31,9 +32,7 @@ class Computer
     i=0
     File.foreach(input) do
       |line|        
-      if i==0
-        reg_a=line.chomp.split("Register A: ")[1].to_i
-      elsif i==1
+      if i==1
         reg_b=line.chomp.split("Register B: ")[1].to_i
       elsif i==2
         reg_c=line.chomp.split("Register C: ")[1].to_i
@@ -44,6 +43,18 @@ class Computer
     end
     # return the lines of the map, plus the moves as an array
     return reg_a, reg_b, reg_c, program
+  end
+
+  def get_program_string
+    # Convert program array into a comma separated string
+    program_string=""
+    for item in @program
+      program_string+=item.to_s
+      program_string+=","
+    end
+    # remove the final comma and return the string
+    puts "program string: "+program_string.chomp(",")
+    return program_string.chomp(",")
   end
 
   def combo_operand(operand)
@@ -70,49 +81,49 @@ class Computer
       opcode=@program[pointer].to_i
       lit_operand=@program[pointer+1].to_i
       increase_pointer=true
-      puts
-      puts "pointer: "+pointer.to_s
-      puts "opcode: "+opcode.to_s
-      puts "operand: "+lit_operand.to_s
-      puts
+      # puts
+      # puts "pointer: "+pointer.to_s
+      # puts "opcode: "+opcode.to_s
+      # puts "operand: "+lit_operand.to_s
+      # puts
       if opcode==0  
-        puts "adv - perform division to update A register value" 
+        # puts "adv - perform division to update A register value" 
         # value in A register divided by 2 to the power of the combo operand => A register
         @reg_a=(@reg_a/2**combo_operand(lit_operand)).to_i
       elsif opcode==1      # bxl 
-        puts "bxl - perform bitwise XOR to update B register value" 
+        # puts "bxl - perform bitwise XOR to update B register value" 
         # bitwise XOR of register B and literal operand => register B
         @reg_b=@reg_b^lit_operand
       elsif opcode==2      # bst  
-        puts "bst - update B register value with combo operand modulo 8" 
+        # puts "bst - update B register value with combo operand modulo 8" 
         # combo operand modulo 8 => B register
         @reg_b=combo_operand(lit_operand)%8
       elsif opcode==3      # jnz 
         if @reg_a==0
-          puts "jnz - A register value is 0 - do nothing" 
+          # puts "jnz - A register value is 0 - do nothing" 
           # does nothing if the A register is 0. 
         else
-          puts "jnz - A register value is not 0 - jump to operand value" 
+          # puts "jnz - A register value is not 0 - jump to operand value" 
           # jump by setting the instruction pointer to the value of its literal operand
           pointer=lit_operand
           increase_pointer=false
         end
       elsif opcode==4      # bxc 
-        puts "bxc - perform bitwise XOR to update B register value" 
+        # puts "bxc - perform bitwise XOR to update B register value" 
           # bitwise XOR of register B and register C => register B (ignores the operand)
         @reg_b=@reg_b^@reg_c
       elsif opcode==5      # out 
-        puts "OUT - output the combo operand modulo 8"
+        # puts "OUT - output the combo operand modulo 8"
         result=(combo_operand(lit_operand)%8).to_s+","
         final_output+=result
       elsif opcode==6      # bdv  (like adv but result stored in B reg)
-        puts "bdv - perform division to update B register value" 
+        # puts "bdv - perform division to update B register value" 
         # perform division, truncate result to an integer and write it to B register
         #    numerator: value in the A register. 
         #    denominator: raise 2 to the power of the combo operand.
         @reg_b=(@reg_a/2**combo_operand(lit_operand)).to_i
       elsif opcode==7      # cdv  (like adv but result stored in C reg)
-        puts "bdv - perform division to update C register value" 
+        # puts "bdv - perform division to update C register value" 
         # perform division, truncate result to an integer and write it to B register
         #    numerator: value in the A register. 
         #    denominator: raise 2 to the power of the combo operand.
@@ -125,8 +136,27 @@ class Computer
     return final_output.chomp(",")
   end
 
+  def replicate_program
+    still_looking=true
+    i=384000000    # already checked values < 384 million - no point doing it again!
+    while still_looking
+      puts "checking A register value "+i.to_s
+      @reg_a=i
+      output_string=run_program
+      # puts "output string: "+output_string
+      if output_string==@program_string
+        still_looking=false
+        return i
+      end
+      i+=1
+    end
+  end
+
 end
 
-# computer=Computer.new("input_test.txt")
+# computer=Computer.new("input_test_2.txt")
 computer=Computer.new("input.txt")
-puts "Final Output: "+computer.final_output
+puts "Required A register value: "+computer.reg_a_val.to_s
+
+
+# Gives correct result for input_test_2.txt but brute force method will probably take too long

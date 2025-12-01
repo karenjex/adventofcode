@@ -1,4 +1,4 @@
-inputfile = "input.txt"
+inputfile = "input_test.txt"
 f = open(inputfile, "r")
 
 # GOAL: 
@@ -27,13 +27,13 @@ set_of_hands=[]
 
 def convert_card_val(card_val):
     if card_val=='A':
-        new_val='14'
-    elif card_val=='K':
         new_val='13'
-    elif card_val=='Q':
+    elif card_val=='K':
         new_val='12'
-    elif card_val=='J':
+    elif card_val=='Q':
         new_val='11'
+    elif card_val=='J':
+        new_val='01'
     elif card_val=='T':
         new_val='10'
     else: 
@@ -42,6 +42,8 @@ def convert_card_val(card_val):
 
 def get_hand_type(cards):
     # determine hand type based on list of cards
+    # J is wildcard - can be whatever makes the hand strongest
+
     # 6 : Five of a kind
     # 5 : Four of a kind
     # 4 : Full house
@@ -49,17 +51,23 @@ def get_hand_type(cards):
     # 2 : Two pair
     # 1 : One pair
     # 0 : High card
-    card_groups=[]
-    cards_found=''
-    max_group_len=0
-    for card in cards:
-        card_found=cards_found.find(card)
-        if card_found==-1:
-            cards_found=''.join([cards_found,card])
-            num_occurences=cards.count(card)
-            if num_occurences>max_group_len:
-                max_group_len=num_occurences
-            card_groups.append((card,num_occurences))
+
+    card_groups={}      # dictionary containing each type of card found in the hand and the number of times it appears
+    # cards_found=''      # keep track of which types of card have been found
+    # max_group_len=0     # keep track of the type of card with the most occurences
+    for card in cards: 
+        try:
+            card_groups[card] = card_groups[card]+1
+        except:
+            card_groups
+            num_occurences=cards.count(card)            # find how many times it appears in the hand
+            if num_occurences>max_group_len:            # if there are more occurences of this card than the previous ones
+                max_group_len=num_occurences            # re-set max_group_len
+                card_groups.append'card_type': card,'num_occurences':num_occurences}        # create dictionary containing type of card and number of occurences
+
+            # card_groups.append((card,num_occurences))
+    print('card groups:',card_groups)
+    num_jokers=
     num_pairs=0
     for group in card_groups:
         if group[1]==2:
