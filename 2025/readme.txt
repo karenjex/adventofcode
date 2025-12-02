@@ -1,3 +1,12 @@
+2025: Using AoC to learn Go
+
+For each day, go to the day's folder and run 
+go mod init 2025/dd
+create the solution.go file and run
+go run .
+
+--
+
 Notes to self because I forget every year what I need to do to get set up:
 
 1. Log in to https://adventofcode.com/yyyy via github
